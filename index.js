@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 const cron = require("node-cron"); // Import node-cron
 const performCronJob1 = require("./cronJobs/1minute");
+const second = require("./cronJobs/second");
 
 async function startServer() {
   try {
@@ -16,6 +17,15 @@ async function startServer() {
     });
 
     console.log("DB connected successfully");
+
+    // Start the cron job scheduler for 5 second jobs
+    cron.schedule("*/10 * * * * *", async () => {
+      try {
+        await second();
+      } catch (error) {
+        console.error("Error performing cron job 1:", error);
+      }
+    });
 
     // Start the cron job scheduler
     cron.schedule("*/1 * * * *", async () => {
@@ -33,7 +43,7 @@ async function startServer() {
     app.use(cors());
 
     // Start the server
-    app.listen(8080, () => {
+    app.listen(8088, () => {
       console.log("Server running on port 8080");
     });
   } catch (error) {
