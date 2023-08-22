@@ -1,6 +1,7 @@
 const axios = require("axios");
 const mongoose = require('mongoose');
 const Alert2 = require('../models/Alert2');
+const MessageTemplate = require('../models/MessageTemplate');
 const nodemailer = require('nodemailer');
 
 const createAxiosInstance = axios.create({
@@ -60,7 +61,9 @@ const second = async () => {
       // Process the alerts (e.g., send emails)
       for (const alert of alerts) {
         // Call the sendAlert function to send the alert
-        sendAlert(alert.email, alert.message,alert._id);
+      const messageTemplate = await MessageTemplate.findOne({ type: alert?.type });
+      message = `${messageTemplate?.message} code ${alert?.message}`;
+        sendAlert(alert?.email, message,alert?._id);
       }
 
       // Move to the next page of alerts

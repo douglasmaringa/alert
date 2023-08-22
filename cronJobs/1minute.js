@@ -1,6 +1,8 @@
 const axios = require("axios");
 const mongoose = require('mongoose');
 const Alert = require('../models/Alert');
+const User = require('../models/User'); // Adjust the path as needed
+const MessageTemplate = require('../models/MessageTemplate');
 const nodemailer = require('nodemailer');
 
 const createAxiosInstance = axios.create({
@@ -12,6 +14,7 @@ const createAxiosInstance = axios.create({
   // Set a lower timeout value (e.g., 5 seconds)
   timeout: 5000,
 });
+
 
 const sendAlert = async (email, error,alertId) => {
   try {
@@ -38,7 +41,7 @@ const sendAlert = async (email, error,alertId) => {
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent:', info.messageId);
      // If the email was successfully sent, delete the alert from the database
-     await Alert.findByIdAndDelete(alertId);
+     //await Alert.findByIdAndDelete(alertId);
   } catch (error) {
     console.error('Error sending email:', error);
   }
@@ -48,22 +51,40 @@ const performCronJob1 = async () => {
   console.log("Running cronJob for 1 minute jobs");
 
   try {
-    // Fetch alerts with pagination (10 at a time)
     const pageSize = 10;
     let currentPage = 1;
 
-    let alerts = await Alert.find({})
+    let alerts = await Alert.find({}).populate('userId') // Populate the userId field with user details
       .skip((currentPage - 1) * pageSize)
       .limit(pageSize);
+    let message;
+    
+      if (alerts[0]?.userId?.contacts?.length > 0) {
+        // Determine the appropriate message template for the down type
+        const messageType = 'Down'; // Adjust based on alert type
+        const messageTemplate = await MessageTemplate.findOne({ type: messageType });
+
+        if (messageTemplate) {
+          // Build the email content using the template and alert details
+          message = messageTemplate.message;
+        }
+      }
+    
 
     while (alerts.length > 0) {
-      // Process the alerts (e.g., send emails)
       for (const alert of alerts) {
-        // Call the sendAlert function to send the alert
-        sendAlert(alert.email, alert.message,alert._id);
+        // Loop through the active email contacts of the user
+        for (const contact of alert.userId.contacts) {
+          if (contact.medium === 'email' && contact.status === 'active') {
+            // Send the email using the contact's email address
+            const email = contact.value;
+            const message2 = `Message: ${message}\nError: ${alert.url}`;
+            sendAlert(email, message2, alert._id);
+          }
+           await Alert.findByIdAndDelete(alert._id);
+        }
       }
 
-      // Move to the next page of alerts
       currentPage++;
       alerts = await Alert.find({})
         .skip((currentPage - 1) * pageSize)
@@ -73,5 +94,6 @@ const performCronJob1 = async () => {
     console.error("Error performing cron job 1:", error);
   }
 };
+
 
 module.exports = performCronJob1;
