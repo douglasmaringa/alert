@@ -2,7 +2,6 @@ const axios = require("axios");
 const mongoose = require('mongoose');
 const Alert = require('../models/Alert');
 const User = require('../models/User'); // Adjust the path as needed
-const Monitor = require('../models/Monitor'); // Adjust the path as needed
 const MessageTemplate = require('../models/MessageTemplate');
 const nodemailer = require('nodemailer');
 
@@ -48,19 +47,19 @@ const sendAlert = async (email, error,alertId) => {
   }
 };
 
-const performCronJob1 = async () => {
+const performCronJob2 = async () => {
   console.log("Running cronJob for 1 minute jobs");
 
   try {
     const pageSize = 10;
     let currentPage = 1;
 
-    let alerts = await Alert.find({}).populate('monitorId') // Populate the userId field with user details
+    let alerts = await Alert.find({}).populate('userId') // Populate the userId field with user details
       .skip((currentPage - 1) * pageSize)
       .limit(pageSize);
     let message;
     
-      if (alerts[0]?.monitorId?.contacts?.length > 0) {
+      if (alerts[0]?.userId?.contacts?.length > 0) {
         // Determine the appropriate message template for the down type
         const messageType = 'Down'; // Adjust based on alert type
         const messageTemplate = await MessageTemplate.findOne({ type: messageType });
@@ -75,10 +74,10 @@ const performCronJob1 = async () => {
     while (alerts.length > 0) {
       for (const alert of alerts) {
         // Loop through the active email contacts of the user
-        for (const contact of alert.monitorId.contacts) {
-          if (contact) {
+        for (const contact of alert.userId.contacts) {
+          if (contact.medium === 'email' && contact.status === 'active') {
             // Send the email using the contact's email address
-            const email = contact;
+            const email = contact.value;
             const message2 = `Message: ${message}\nError: ${alert.url}`;
             sendAlert(email, message2, alert._id);
           }
@@ -97,4 +96,4 @@ const performCronJob1 = async () => {
 };
 
 
-module.exports = performCronJob1;
+module.exports = performCronJob2;
