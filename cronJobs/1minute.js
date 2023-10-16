@@ -57,8 +57,10 @@ const performCronJob1 = async () => {
 
     let alerts = await Alert.find({}).populate('monitorId') // Populate the userId field with user details
       .skip((currentPage - 1) * pageSize)
+      .sort({ createdAt: -1 })
       .limit(pageSize);
     let message;
+    //console.log(alerts)
     
       if (alerts[0]?.monitorId?.contacts?.length > 0) {
         // Determine the appropriate message template for the down type
