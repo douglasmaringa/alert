@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Alert2 = require('../models/Alert2');
 const MessageTemplate = require('../models/MessageTemplate');
 const nodemailer = require('nodemailer');
+require('dotenv').config()
 
 const createAxiosInstance = axios.create({
   // Disable retries
@@ -16,7 +17,7 @@ const createAxiosInstance = axios.create({
 
 
 
-const sendAlert = async (email,message, code,alertId) => {
+const sendAlert = async (email,message, code,alertId,from,subject) => {
   try {
     // Create a transporter using the Gmail SMTP settings
     const transporter = nodemailer.createTransport({
@@ -28,12 +29,14 @@ const sendAlert = async (email,message, code,alertId) => {
     });
 
     messageTemplate = message.replace('{{variable}}', code);
+    //const from = "test@gmail.com"
+    //const subject = "testing"
 
     // Setup email data
     const mailOptions = {
-      from: 'uptimemonitor50@gmail.com', // Sender address (must be your Gmail email address)
+      from: `From @${from} <donotreply@bar.com>`, // Sender address (must be your Gmail email address)
       to: email, // Recipient's email address
-      subject: 'Alert: Service Issue', // Subject line
+      subject: subject, // Subject line
       //text: `Message Details: ${error}`, // Plain text body
       html: messageTemplate,
       // You can also provide an HTML body for the email
@@ -68,7 +71,7 @@ const second = async () => {
         // Call the sendAlert function to send the alert
       const messageTemplate = await MessageTemplate.findOne({ type: alert?.type });
      
-        sendAlert(alert?.email,messageTemplate?.message, alert?.message,alert?._id);
+        sendAlert(alert?.email,messageTemplate?.message, alert?.message,alert?._id,messageTemplate?.from,messageTemplate?.subject);
       }
 
       // Move to the next page of alerts

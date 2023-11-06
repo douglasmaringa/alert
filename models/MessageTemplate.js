@@ -7,12 +7,21 @@ const messageTemplateSchema = new mongoose.Schema({
       'Up',
       'Down',
       'Registration',
+      '2FA',
       'PasswordReset',
       'DeleteAccount',
       'UserDeletion',
     ],
     required: true,
     unique: true,
+  },
+  from: {
+    type: String,
+    required: true,
+  },
+  subject: {
+    type: String,
+    required: true,
   },
   message: {
     type: String,
