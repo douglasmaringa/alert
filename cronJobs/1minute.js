@@ -17,7 +17,7 @@ const createAxiosInstance = axios.create({
 });
 
 
-const sendAlert = async (email, error,alertId) => {
+const sendAlert = async (email,message, url,alertId) => {
   try {
     // Create a transporter using the Gmail SMTP settings
     const transporter = nodemailer.createTransport({
@@ -28,12 +28,14 @@ const sendAlert = async (email, error,alertId) => {
       },
     });
 
+    messageTemplate = message.replace('{{variable}}', url);
+
     // Setup email data
     const mailOptions = {
       from: 'uptimemonitor50@gmail.com', // Sender address (must be your Gmail email address)
       to: email, // Recipient's email address
       subject: 'Alert: Service Issue', // Subject line
-      text: `Message Details: ${error}`, // Plain text body
+      html: messageTemplate,
       // You can also provide an HTML body for the email
       // html: `<h1>Alert: Service Issue</h1><p>Error Details: ${error}</p>`
     };
@@ -81,8 +83,8 @@ const performCronJob1 = async () => {
           if (contact) {
             // Send the email using the contact's email address
             const email = contact;
-            const message2 = `Message: ${message}\nError: ${alert.url}`;
-            sendAlert(email, message2, alert._id);
+           
+            sendAlert(email, message,alert.url, alert._id);
           }
            await Alert.findByIdAndDelete(alert._id);
         }
